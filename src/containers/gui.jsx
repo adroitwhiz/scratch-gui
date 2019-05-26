@@ -35,9 +35,12 @@ import storage from '../lib/storage';
 import vmListenerHOC from '../lib/vm-listener-hoc.jsx';
 import vmManagerHOC from '../lib/vm-manager-hoc.jsx';
 import cloudManagerHOC from '../lib/cloud-manager-hoc.jsx';
+import Loader from '../components/loader/loader.jsx';
 
-import GUIComponent from '../components/gui/gui.jsx';
+// import GUIComponent from '../components/gui/gui.jsx';
 import {setIsScratchDesktop} from '../lib/isScratchDesktop.js';
+
+import VideoProvider from '../lib/video/video-provider';
 
 const messages = defineMessages({
     defaultProjectTitle: {
@@ -52,6 +55,22 @@ class GUI extends React.Component {
         setIsScratchDesktop(this.props.isScratchDesktop);
         this.setReduxTitle(this.props.projectTitle);
         this.props.onStorageInit(storage);
+
+        // Use setTimeout. Do not use requestAnimationFrame or a resolved
+        // Promise. We want this work delayed until after the data request is
+        // made.
+        setTimeout(this.ensureRenderer.bind(this));
+
+        // Once the GUI component has been rendered, always render GUI and do
+        // not revert back to a Loader in this component.
+        //
+        // This makes GUI container not a pure component. We don't want to use
+        // state for this. That would possibly cause a full second render of GUI
+        // after the first one.
+        const {fontsLoaded, fetchingProject, isLoading} = this.props;
+        this.isAfterGUI = this.isAfterGUI || (
+            fontsLoaded && !fetchingProject && !isLoading
+        );
     }
     componentDidUpdate (prevProps) {
         if (this.props.projectId !== prevProps.projectId && this.props.projectId !== null) {
@@ -60,6 +79,22 @@ class GUI extends React.Component {
         if (this.props.projectTitle !== prevProps.projectTitle) {
             this.setReduxTitle(this.props.projectTitle);
         }
+        if (this.props.isShowingProject && !prevProps.isShowingProject) {
+            // this only notifies container when a project changes from not yet loaded to loaded
+            // At this time the project view in www doesn't need to know when a project is unloaded
+            this.props.onProjectLoaded();
+        }
+
+        // Once the GUI component has been rendered, always render GUI and do
+        // not revert back to a Loader in this component.
+        //
+        // This makes GUI container not a pure component. We don't want to use
+        // state for this. That would possibly cause a full second render of GUI
+        // after the first one.
+        const {fontsLoaded, fetchingProject, isLoading} = this.props;
+        this.isAfterGUI = this.isAfterGUI || (
+            fontsLoaded && !fetchingProject && !isLoading
+        );
     }
     setReduxTitle (newTitle) {
         if (newTitle === null || typeof newTitle === 'undefined') {
@@ -69,6 +104,36 @@ class GUI extends React.Component {
         } else {
             this.props.onUpdateReduxProjectTitle(newTitle);
         }
+    }
+    ensureRenderer () {
+        if (this.props.vm.renderer) {
+            return;
+        }
+
+        // Wait to load svg-renderer and render after the data request. This
+        // way the data request is made earlier.
+        const Renderer = require('scratch-render');
+        const {
+            SVGRenderer: V2SVGAdapter,
+            BitmapAdapter: V2BitmapAdapter
+        } = require('scratch-svg-renderer');
+
+        const vm = this.props.vm;
+        this.canvas = document.createElement('canvas');
+        this.renderer = new Renderer(this.canvas);
+        vm.attachRenderer(this.renderer);
+
+        vm.attachV2SVGAdapter(new V2SVGAdapter());
+        vm.attachV2BitmapAdapter(new V2BitmapAdapter());
+
+        // Only attach a video provider once because it is stateful
+        vm.setVideoProvider(new VideoProvider());
+
+        // Calling draw a single time before any project is loaded just
+        // makes the canvas white instead of solid black–needed because it
+        // is not possible to use CSS to style the canvas to have a
+        // different default color
+        vm.renderer.draw();
     }
     render () {
         if (this.props.isError) {
@@ -80,9 +145,11 @@ class GUI extends React.Component {
             assetHost,
             cloudHost,
             error,
+            fontsLoaded,
             isError,
             isScratchDesktop,
             isShowingProject,
+            onProjectLoaded,
             onStorageInit,
             onUpdateProjectId,
             onUpdateReduxProjectTitle,
@@ -96,6 +163,16 @@ class GUI extends React.Component {
             loadingStateVisible,
             ...componentProps
         } = this.props;
+
+        if (!this.isAfterGUI && (
+            !fontsLoaded || fetchingProject || isLoading
+        )) {
+            // Make sure a renderer exists.
+            if (fontsLoaded && !fetchingProject) this.ensureRenderer();
+            return <Loader />;
+        }
+
+        const GUIComponent = require('../components/gui/gui.jsx').default;
         return (
             <GUIComponent
                 loading={fetchingProject || isLoading || loadingStateVisible}
@@ -113,19 +190,19 @@ GUI.propTypes = {
     cloudHost: PropTypes.string,
     error: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
     fetchingProject: PropTypes.bool,
-    importInfoVisible: PropTypes.bool,
+    fontsLoaded: PropTypes.bool,
     intl: intlShape,
     isError: PropTypes.bool,
     isLoading: PropTypes.bool,
     isScratchDesktop: PropTypes.bool,
     isShowingProject: PropTypes.bool,
     loadingStateVisible: PropTypes.bool,
+    onProjectLoaded: PropTypes.func,
     onSeeCommunity: PropTypes.func,
     onStorageInit: PropTypes.func,
     onUpdateProjectId: PropTypes.func,
     onUpdateProjectTitle: PropTypes.func,
     onUpdateReduxProjectTitle: PropTypes.func,
-    previewInfoVisible: PropTypes.bool,
     projectHost: PropTypes.string,
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     projectTitle: PropTypes.string,
@@ -136,6 +213,7 @@ GUI.propTypes = {
 GUI.defaultProps = {
     isScratchDesktop: false,
     onStorageInit: storageInstance => storageInstance.addOfficialScratchWebStores(),
+    onProjectLoaded: () => {},
     onUpdateProjectId: () => {}
 };
 
@@ -151,13 +229,13 @@ const mapStateToProps = state => {
         costumeLibraryVisible: state.scratchGui.modals.costumeLibrary,
         costumesTabVisible: state.scratchGui.editorTab.activeTabIndex === COSTUMES_TAB_INDEX,
         error: state.scratchGui.projectState.error,
-        importInfoVisible: state.scratchGui.modals.importInfo,
+        fontsLoaded: state.scratchGui.fontsLoaded,
         isError: getIsError(loadingState),
+        isFullScreen: state.scratchGui.mode.isFullScreen,
         isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
         isRtl: state.locales.isRtl,
         isShowingProject: getIsShowingProject(loadingState),
         loadingStateVisible: state.scratchGui.modals.loadingProject,
-        previewInfoVisible: state.scratchGui.modals.previewInfo,
         projectId: state.scratchGui.projectState.projectId,
         soundsTabVisible: state.scratchGui.editorTab.activeTabIndex === SOUNDS_TAB_INDEX,
         targetIsStage: (
