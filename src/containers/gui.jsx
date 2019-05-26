@@ -112,7 +112,7 @@ class GUI extends React.Component {
 
         // Wait to load svg-renderer and render after the data request. This
         // way the data request is made earlier.
-        const Renderer = require('scratch-render');
+        const Renderer = require('fabricat');
         const {
             SVGRenderer: V2SVGAdapter,
             BitmapAdapter: V2BitmapAdapter
