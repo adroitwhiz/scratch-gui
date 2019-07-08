@@ -6,6 +6,7 @@ import {defineMessages, intlShape, injectIntl, FormattedMessage} from 'react-int
 import Box from '../box/box.jsx';
 import ActionMenu from '../action-menu/action-menu.jsx';
 import styles from './stage-selector.css';
+import {SUPPORTED_IMAGE_EXTENSIONS} from '../../lib/supported-file-types';
 import {isRtl} from 'scratch-l10n';
 
 import backdropIcon from '../action-menu/icon--backdrop.svg';
@@ -102,7 +103,7 @@ const StageSelector = props => {
                         title: intl.formatMessage(messages.addBackdropFromFile),
                         img: fileUploadIcon,
                         onClick: onBackdropFileUploadClick,
-                        fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .gif',
+                        fileAccept: SUPPORTED_IMAGE_EXTENSIONS.join(','),
                         fileChange: onBackdropFileUpload,
                         fileInput: fileInputRef,
                         fileMultiple: true

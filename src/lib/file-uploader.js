@@ -3,6 +3,7 @@ import log from './log.js';
 import randomizeSpritePosition from './randomize-sprite-position.js';
 import bmpConverter from './bmp-converter';
 import gifDecoder from './gif-decoder';
+import {SUPPORTED_IMAGE_MIMETYPES, SUPPORTED_AUDIO_MIMETYPE_MAP} from './supported-file-types';
 
 /**
  * Extract the file name given a string of the form fileName + ext
@@ -178,16 +179,12 @@ const costumeUpload = function (fileData, fileType, storage, handleCostume, hand
  */
 const soundUpload = function (fileData, fileType, storage, handleSound) {
     let soundFormat;
-    switch (fileType) {
-    case 'audio/mp3':
-    case 'audio/mpeg': {
+    switch (SUPPORTED_AUDIO_MIMETYPE_MAP[fileType]) {
+    case 'MP3': {
         soundFormat = storage.DataFormat.MP3;
         break;
     }
-    case 'audio/wav':
-    case 'audio/wave':
-    case 'audio/x-wav':
-    case 'audio/x-pn-wav': {
+    case 'WAV': {
         soundFormat = storage.DataFormat.WAV;
         break;
     }
@@ -212,40 +209,36 @@ const spriteUpload = function (fileData, fileType, spriteName, storage, handleSp
         handleSprite(new Uint8Array(fileData));
         return;
     }
-    case 'image/svg+xml':
-    case 'image/png':
-    case 'image/bmp':
-    case 'image/jpeg':
-    case 'image/gif': {
-        // Make a sprite from an image by making it a costume first
-        costumeUpload(fileData, fileType, storage, vmCostumes => {
-            vmCostumes.forEach((costume, i) => {
-                costume.name = `${spriteName}${i ? i + 1 : ''}`;
-            });
-            const newSprite = {
-                name: spriteName,
-                isStage: false,
-                x: 0, // x/y will be randomized below
-                y: 0,
-                visible: true,
-                size: 100,
-                rotationStyle: 'all around',
-                direction: 90,
-                draggable: false,
-                currentCostume: 0,
-                blocks: {},
-                variables: {},
-                costumes: vmCostumes,
-                sounds: [] // TODO are all of these necessary?
-            };
-            randomizeSpritePosition(newSprite);
-            // TODO probably just want sprite upload to handle this object directly
-            handleSprite(JSON.stringify(newSprite));
-        }, handleError);
-        return;
-    }
     default: {
-        handleError(`Encountered unexpected file type: ${fileType}`);
+        if (SUPPORTED_IMAGE_MIMETYPES.includes(fileType)) {
+            // Make a sprite from an image by making it a costume first
+            costumeUpload(fileData, fileType, storage, vmCostumes => {
+                vmCostumes.forEach((costume, i) => {
+                    costume.name = `${spriteName}${i ? i + 1 : ''}`;
+                });
+                const newSprite = {
+                    name: spriteName,
+                    isStage: false,
+                    x: 0, // x/y will be randomized below
+                    y: 0,
+                    visible: true,
+                    size: 100,
+                    rotationStyle: 'all around',
+                    direction: 90,
+                    draggable: false,
+                    currentCostume: 0,
+                    blocks: {},
+                    variables: {},
+                    costumes: vmCostumes,
+                    sounds: [] // TODO are all of these necessary?
+                };
+                randomizeSpritePosition(newSprite);
+                // TODO probably just want sprite upload to handle this object directly
+                handleSprite(JSON.stringify(newSprite));
+            }, handleError);
+        } else {
+            handleError(`Encountered unexpected file type: ${fileType}`);
+        }
         return;
     }
     }

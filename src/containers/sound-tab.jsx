@@ -22,6 +22,7 @@ import {handleFileUpload, soundUpload} from '../lib/file-uploader.js';
 import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import DragConstants from '../lib/drag-constants';
 import downloadBlob from '../lib/download-blob';
+import {SUPPORTED_AUDIO_EXTENSIONS} from '../lib/supported-file-types';
 
 import {connect} from 'react-redux';
 
@@ -228,7 +229,7 @@ class SoundTab extends React.Component {
                     title: intl.formatMessage(messages.fileUploadSound),
                     img: fileUploadIcon,
                     onClick: this.handleFileUploadClick,
-                    fileAccept: '.wav, .mp3',
+                    fileAccept: SUPPORTED_AUDIO_EXTENSIONS.join(','),
                     fileChange: this.handleSoundUpload,
                     fileInput: this.setFileInput,
                     fileMultiple: true

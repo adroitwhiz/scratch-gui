@@ -14,6 +14,7 @@ import DragConstants from '../lib/drag-constants';
 import {emptyCostume} from '../lib/empty-assets';
 import sharedMessages from '../lib/shared-messages';
 import downloadBlob from '../lib/download-blob';
+import {SUPPORTED_IMAGE_EXTENSIONS} from '../lib/supported-file-types';
 
 import {
     closeCameraCapture,
@@ -307,7 +308,7 @@ class CostumeTab extends React.Component {
                         title: intl.formatMessage(addFileMessage),
                         img: fileUploadIcon,
                         onClick: this.handleFileUploadClick,
-                        fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .gif',
+                        fileAccept: SUPPORTED_IMAGE_EXTENSIONS.join(','),
                         fileChange: this.handleCostumeUpload,
                         fileInput: this.setFileInput,
                         fileMultiple: true

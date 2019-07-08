@@ -7,6 +7,7 @@ import SpriteInfo from '../../containers/sprite-info.jsx';
 import SpriteList from './sprite-list.jsx';
 import ActionMenu from '../action-menu/action-menu.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants';
+import {SUPPORTED_IMAGE_EXTENSIONS} from '../../lib/supported-file-types';
 import {isRtl} from 'scratch-l10n';
 
 import styles from './sprite-selector.css';
@@ -120,7 +121,7 @@ const SpriteSelectorComponent = function (props) {
                         title: intl.formatMessage(messages.addSpriteFromFile),
                         img: fileUploadIcon,
                         onClick: onFileUploadClick,
-                        fileAccept: '.svg, .png, .bmp, .jpg, .jpeg, .sprite2, .sprite3, .gif',
+                        fileAccept: SUPPORTED_IMAGE_EXTENSIONS.concat(['.sprite2', '.sprite3']).join(','),
                         fileChange: onSpriteUpload,
                         fileInput: spriteFileInput,
                         fileMultiple: true
