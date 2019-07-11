@@ -335,6 +335,10 @@ class Stage extends React.Component {
         this.dragCanvas.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
     }
     onStartDrag (x, y) {
+        // If not in editor drag mode, return early before doing anything else.
+        // Renderer.pick() can be expensive, so avoid calling it if it isn't necessary.
+        if (!this.props.useEditorDragStyle) return;
+
         if (this.state.dragId) return;
         const drawableId = this.renderer.pick(x, y);
         if (drawableId === null) return;
@@ -343,8 +347,8 @@ class Stage extends React.Component {
 
         const target = this.props.vm.runtime.getTargetById(targetId);
 
-        // Do not start drag unless in editor drag mode or target is draggable
-        if (!(this.props.useEditorDragStyle || target.draggable)) return;
+        // Do not start drag unless target is draggable
+        if (!target.draggable) return;
 
         // Dragging always brings the target to the front
         target.goToFront();
