@@ -52,10 +52,7 @@ const base = {
                     ['react-intl', {
                         messagesDir: './translations/messages/'
                     }]],
-                presets: [
-                    ['@babel/preset-env', {targets: {browsers: ['last 3 versions', 'Safari >= 8', 'iOS >= 8']}}],
-                    '@babel/preset-react'
-                ]
+                presets: ['@babel/preset-env', '@babel/preset-react']
             }
         },
         {
@@ -78,9 +75,7 @@ const base = {
                         return [
                             postcssImport,
                             postcssVars,
-                            autoprefixer({
-                                browsers: ['last 3 versions', 'Safari >= 8', 'iOS >= 8']
-                            })
+                            autoprefixer
                         ];
                     }
                 }
