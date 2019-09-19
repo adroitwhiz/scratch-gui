@@ -27,6 +27,9 @@ const base = {
         filename: '[name].js',
         chunkFilename: 'chunks/[name].js'
     },
+    resolve: {
+        symlinks: true
+    },
     externals: {
         React: 'react',
         ReactDOM: 'react-dom'
