@@ -121,10 +121,12 @@ module.exports = [
             ])
         },
         optimization: {
-            splitChunks: {
+            // splitChunks breaks .wasm imports under certain `npm link` conditions
+            // See https://github.com/webpack/webpack/issues/10593
+            /* splitChunks: {
                 chunks: 'all',
                 name: 'lib.min'
-            },
+            },*/
             runtimeChunk: {
                 name: 'lib.min'
             }
