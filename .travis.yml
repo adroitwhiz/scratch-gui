@@ -33,7 +33,6 @@ deploy:
     - master
     - develop
     - hotfix/*
-    - swrender
     condition: $TRAVIS_EVENT_TYPE != cron
   skip_cleanup: true
   email: $NPM_EMAIL
