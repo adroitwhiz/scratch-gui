@@ -158,6 +158,9 @@ jobs:
       - checkout
       - *restore_npm_cache
       - *restore_build_cache
+      - add_ssh_keys:
+        fingerprints:
+          - "SHA256:jGLwwhW0ak751Ho0xyCmMCLaYZILUJIgNu6fcq8FCco"
       - run: |
           git config --global user.email $(git log --pretty=format:"%ae" -n1)
           git config --global user.name $(git log --pretty=format:"%an" -n1)
