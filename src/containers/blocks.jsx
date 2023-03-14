@@ -547,7 +547,7 @@ class Blocks extends React.Component {
                 {this.state.prompt ? (
                     <Prompt
                         defaultValue={this.state.prompt.defaultValue}
-                        isStage={vm.runtime.getEditingTarget().isStage}
+                        isStage={vm.editingTarget.isStage}
                         showListMessage={this.state.prompt.varType === this.ScratchBlocks.LIST_VARIABLE_TYPE}
                         label={this.state.prompt.message}
                         showCloudOption={this.state.prompt.showCloudOption}
