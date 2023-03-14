@@ -432,8 +432,8 @@ class Blocks extends React.Component {
             }
         }
     }
-    handleExtensionAdded (categoryInfo) {
-        this.ScratchBlocks.defineBlocksWithJsonArray(categoryInfo.blockDefs);
+    handleExtensionAdded (blockDefs) {
+        this.ScratchBlocks.defineBlocksWithJsonArray(blockDefs);
 
         // Update the toolbox with new blocks if possible
         const toolboxXML = this.getToolboxXML();
@@ -441,9 +441,9 @@ class Blocks extends React.Component {
             this.props.updateToolboxState(toolboxXML);
         }
     }
-    handleBlocksInfoUpdate (categoryInfo) {
+    handleBlocksInfoUpdate (blockDefs) {
         // @todo Later we should replace this to avoid all the warnings from redefining blocks.
-        this.handleExtensionAdded(categoryInfo);
+        this.ScratchBlocks.defineBlocksWithJsonArray(blockDefs);
     }
     handleCategorySelected (categoryId) {
         const extension = extensionData.find(ext => ext.extensionId === categoryId);
