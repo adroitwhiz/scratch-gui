@@ -1,7 +1,6 @@
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
-import VM from 'scratch-vm';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import extensionLibraryContent from '../lib/libraries/extensions/index.jsx';
@@ -31,21 +30,8 @@ class ExtensionLibrary extends React.PureComponent {
     }
     handleItemSelect (item) {
         const id = item.extensionId;
-        let url = item.extensionURL ? item.extensionURL : id;
-        if (!item.disabled && !id) {
-            // eslint-disable-next-line no-alert
-            url = prompt(this.props.intl.formatMessage(messages.extensionUrl));
-        }
         if (id && !item.disabled) {
-            if (this.props.vm.runtime.isExtensionLoaded(url)) {
-                this.props.onCategorySelected(id);
-            } else {
-                this.props.vm.runtime.loadExtensionId(url);
-                // TODO: remove this one-frame delay, currently necessary to make scroll-to-new-extension work
-                requestAnimationFrame(() => {
-                    this.props.onCategorySelected(id);
-                });
-            }
+            this.props.onCategorySelected(id);
         }
     }
     render () {
@@ -71,8 +57,7 @@ ExtensionLibrary.propTypes = {
     intl: intlShape.isRequired,
     onCategorySelected: PropTypes.func,
     onRequestClose: PropTypes.func,
-    visible: PropTypes.bool,
-    vm: PropTypes.instanceOf(VM).isRequired // eslint-disable-line react/no-unused-prop-types
+    visible: PropTypes.bool
 };
 
 export default injectIntl(ExtensionLibrary);

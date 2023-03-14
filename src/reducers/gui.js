@@ -24,7 +24,6 @@ import targetReducer, {targetsInitialState} from './targets';
 import themeReducer, {themeInitialState} from './theme';
 import timeoutReducer, {timeoutInitialState} from './timeout';
 import timeTravelReducer, {timeTravelInitialState} from './time-travel';
-import toolboxReducer, {toolboxInitialState} from './toolbox';
 import vmReducer, {vmInitialState} from './vm';
 import vmStatusReducer, {vmStatusInitialState} from './vm-status';
 import workspaceMetricsReducer, {workspaceMetricsInitialState} from './workspace-metrics';
@@ -60,7 +59,6 @@ const guiInitialState = {
     theme: themeInitialState,
     timeout: timeoutInitialState,
     timeTravel: timeTravelInitialState,
-    toolbox: toolboxInitialState,
     vm: vmInitialState,
     vmStatus: vmStatusInitialState,
     workspaceMetrics: workspaceMetricsInitialState
@@ -161,7 +159,6 @@ const guiReducer = combineReducers({
     theme: themeReducer,
     timeout: timeoutReducer,
     timeTravel: timeTravelReducer,
-    toolbox: toolboxReducer,
     vm: vmReducer,
     vmStatus: vmStatusReducer,
     workspaceMetrics: workspaceMetricsReducer
