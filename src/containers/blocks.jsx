@@ -100,7 +100,7 @@ class Blocks extends React.Component {
         const workspaceConfig = defaultsDeep({},
             Blocks.defaultOptions,
             this.props.options,
-            {rtl: this.props.isRtl, toolbox: this.getToolboxXML(), colours: getColorsForTheme(this.props.theme)}
+            {rtl: this.props.isRtl, toolbox: makeToolboxXML(true), colours: getColorsForTheme(this.props.theme)}
         );
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
 
@@ -158,24 +158,20 @@ class Blocks extends React.Component {
         if (this.props.isVisible === prevProps.isVisible) {
             if (this.props.stageSize !== prevProps.stageSize) {
                 // force workspace to redraw for the new stage size
-                window.dispatchEvent(new Event('resize'));
+                this.ScratchBlocks.svgResize(this.workspace);
             }
             return;
         }
-        // @todo hack to resize blockly manually in case resize happened while hidden
-        // @todo hack to reload the workspace due to gui bug #413
+
         if (this.props.isVisible) { // Scripts tab
             this.workspace.setVisible(true);
             if (prevProps.locale !== this.props.locale || this.props.locale !== this.props.vm.getLocale()) {
                 // call setLocale if the locale has changed, or changed while the blocks were hidden.
                 // vm.getLocale() will be out of sync if locale was changed while not visible
                 this.setLocale();
-            } else {
-                this.props.vm.refreshWorkspace();
-                this.updateToolbox();
             }
-
-            window.dispatchEvent(new Event('resize'));
+            // resize blockly manually in case resize happened while hidden
+            this.ScratchBlocks.svgResize(this.workspace);
         } else {
             this.workspace.setVisible(false);
         }
@@ -326,7 +322,8 @@ class Blocks extends React.Component {
                 targetSounds.length > 0 ? targetSounds[targetSounds.length - 1].name : '',
                 getColorsForTheme(this.props.theme)
             );
-        } catch {
+        } catch (err) {
+            log.error(err);
             return null;
         }
     }
