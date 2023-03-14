@@ -37,10 +37,12 @@ class ExtensionLibrary extends React.PureComponent {
             url = prompt(this.props.intl.formatMessage(messages.extensionUrl));
         }
         if (id && !item.disabled) {
-            if (this.props.vm.extensionManager.isExtensionLoaded(url)) {
+            if (this.props.vm.runtime.isExtensionLoaded(url)) {
                 this.props.onCategorySelected(id);
             } else {
-                this.props.vm.extensionManager.loadExtensionURL(url).then(() => {
+                this.props.vm.runtime.loadExtensionId(url);
+                // TODO: remove this one-frame delay, currently necessary to make scroll-to-new-extension work
+                requestAnimationFrame(() => {
                     this.props.onCategorySelected(id);
                 });
             }

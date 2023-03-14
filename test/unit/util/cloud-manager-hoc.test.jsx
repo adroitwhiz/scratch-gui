@@ -48,9 +48,7 @@ describe('CloudManagerHOC', () => {
         vm = new VM();
         vm.setCloudProvider = jest.fn();
         vm.runtime = {
-            hasCloudData: jest.fn(() => true)
-        };
-        vm.extensionManager = {
+            hasCloudData: jest.fn(() => true),
             isExtensionLoaded: jest.fn(() => false)
         };
         CloudProvider.mockClear();
@@ -146,7 +144,7 @@ describe('CloudManagerHOC', () => {
     test('when videoSensing extension is active, the cloud provider is not set on the vm', () => {
         const Component = () => <div />;
         const WrappedComponent = cloudManagerHOC(Component);
-        vm.extensionManager.isExtensionLoaded = jest.fn(extension => extension === 'videoSensing');
+        vm.runtime.isExtensionLoaded = jest.fn(extension => extension === 'videoSensing');
 
         mount(
             <WrappedComponent
