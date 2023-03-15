@@ -214,12 +214,9 @@ class Blocks extends React.Component {
     }
 
     attachVM () {
-        this.workspace.addChangeListener(this.props.vm.blockListener);
         this.flyoutWorkspace = this.workspace
             .getFlyout()
             .getWorkspace();
-        this.flyoutWorkspace.addChangeListener(this.props.vm.flyoutBlockListener);
-        this.flyoutWorkspace.addChangeListener(this.props.vm.monitorBlockListener);
         this.props.vm.attachBlocks(this.ScratchBlocks);
         this.props.vm.setWorkspace(this.workspace);
         this.props.vm.addListener('SCRIPT_GLOW_ON', this.onScriptGlowOn);
@@ -333,9 +330,11 @@ class Blocks extends React.Component {
             this.onWorkspaceMetricsChange();
         }
 
-        // Remove and reattach the workspace listener (but allow flyout events)
-        this.workspace.removeChangeListener(this.props.vm.blockListener);
         const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
+
+        // Tell the VM that the workspace is updating so that it doesn't listen to e.g. "delete" events
+        // TODO: get rid of this flag ASAP once the VM is in charge of updating the workspace.
+        this.props.vm.runtime.blocksManager.workspaceUpdating = true;
         try {
             this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
 
@@ -358,8 +357,7 @@ class Blocks extends React.Component {
             }
             log.error(error);
         }
-
-        this.workspace.addChangeListener(this.props.vm.blockListener);
+        this.props.vm.runtime.blocksManager.workspaceUpdating = false;
 
         if (this.props.vm.editingTarget && this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             const {scrollX, scrollY, scale} = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
