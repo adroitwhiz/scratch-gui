@@ -68,7 +68,6 @@ class Blocks extends React.Component {
             'handleExtensionAdded',
             'handleBlocksInfoUpdate',
             'onTargetsUpdate',
-            'onVisualReport',
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
@@ -215,7 +214,6 @@ class Blocks extends React.Component {
             .getWorkspace();
         this.props.vm.attachBlocks(this.ScratchBlocks);
         this.props.vm.setWorkspace(this.workspace);
-        this.props.vm.addListener('VISUAL_REPORT', this.onVisualReport);
         this.props.vm.addListener('workspaceUpdate', this.onWorkspaceUpdate);
         this.props.vm.addListener('targetsUpdate', this.onTargetsUpdate);
         this.props.vm.addListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
@@ -226,7 +224,6 @@ class Blocks extends React.Component {
     }
     detachVM () {
         this.props.vm.setWorkspace(null);
-        this.props.vm.removeListener('VISUAL_REPORT', this.onVisualReport);
         this.props.vm.removeListener('workspaceUpdate', this.onWorkspaceUpdate);
         this.props.vm.removeListener('targetsUpdate', this.onTargetsUpdate);
         this.props.vm.removeListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
@@ -269,9 +266,6 @@ class Blocks extends React.Component {
                 });
             }, 0);
         }
-    }
-    onVisualReport (data) {
-        this.workspace.reportValue(data.id, data.value);
     }
     getToolboxXML () {
         // Use try/catch because this requires digging pretty deep into the VM
