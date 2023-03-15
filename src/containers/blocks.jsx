@@ -342,10 +342,7 @@ class Blocks extends React.Component {
             // When we change sprites, update the toolbox to have the new sprite's blocks.
             // This must be done after loading the workspace, because the "Variables" category is populated based on
             // the variables which are defined in the workspace.
-            const toolboxXML = this.getToolboxXML();
-            if (toolboxXML) {
-                this.updateToolbox();
-            }
+            this.updateToolbox();
         } catch (error) {
             // The workspace is likely incomplete. What did update should be
             // functional.
