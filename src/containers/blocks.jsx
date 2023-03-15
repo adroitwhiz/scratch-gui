@@ -1,12 +1,10 @@
 import bindAll from 'lodash.bindall';
 import defaultsDeep from 'lodash.defaultsdeep';
-import makeToolboxXML from '../lib/make-toolbox-xml';
 import PropTypes from 'prop-types';
 import React from 'react';
 import VMScratchBlocks from '../lib/blocks';
 import VM from 'scratch-vm';
 
-import log from '../lib/log.js';
 import Prompt from './prompt.jsx';
 import BlocksComponent from '../components/blocks/blocks.jsx';
 import ExtensionLibrary from './extension-library.jsx';
@@ -53,7 +51,6 @@ class Blocks extends React.Component {
         bindAll(this, [
             'attachVM',
             'detachVM',
-            'getToolboxXML',
             'handleCategorySelected',
             'handleConnectionModalStart',
             'handleDrop',
@@ -62,8 +59,6 @@ class Blocks extends React.Component {
             'handlePromptCallback',
             'handlePromptClose',
             'handleCustomProceduresClose',
-            'handleExtensionAdded',
-            'handleBlocksInfoUpdate',
             'handleBlocksNeedUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
@@ -90,7 +85,7 @@ class Blocks extends React.Component {
         const workspaceConfig = defaultsDeep({},
             Blocks.defaultOptions,
             this.props.options,
-            {rtl: this.props.isRtl, toolbox: makeToolboxXML(true), colours: getColorsForTheme(this.props.theme)}
+            {rtl: this.props.isRtl, toolbox: null, colours: getColorsForTheme(this.props.theme)}
         );
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
 
@@ -153,7 +148,7 @@ class Blocks extends React.Component {
                 this.setLocale();
             }
             if (!prevProps.isVisible) {
-                this.updateWorkspace(this.getToolboxXML());
+                this.updateWorkspace();
             }
             // resize blockly manually in case resize happened while hidden
             this.ScratchBlocks.svgResize(this.workspace);
@@ -176,7 +171,6 @@ class Blocks extends React.Component {
     updateToolbox () {
         const categoryId = this.workspace.toolbox_.getSelectedCategoryId();
         const offset = this.workspace.toolbox_.getCategoryScrollOffset();
-        this.workspace.updateToolbox(this.getToolboxXML());
 
         const currentCategoryPos = this.workspace.toolbox_.getCategoryPositionById(categoryId);
         const currentCategoryLen = this.workspace.toolbox_.getCategoryLengthById(categoryId);
@@ -194,14 +188,10 @@ class Blocks extends React.Component {
         this.props.vm.attachBlocks(this.ScratchBlocks);
         this.props.vm.setWorkspace(this.workspace);
         this.props.vm.addListener('BLOCKS_NEED_UPDATE', this.handleBlocksNeedUpdate);
-        this.props.vm.addListener('EXTENSION_ADDED', this.handleExtensionAdded);
-        this.props.vm.addListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
     }
     detachVM () {
         this.props.vm.setWorkspace(null);
         this.props.vm.removeListener('BLOCKS_NEED_UPDATE', this.handleBlocksNeedUpdate);
-        this.props.vm.removeListener('EXTENSION_ADDED', this.handleExtensionAdded);
-        this.props.vm.removeListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
     }
 
     onWorkspaceMetricsChange () {
@@ -220,41 +210,13 @@ class Blocks extends React.Component {
             }, 0);
         }
     }
-    getToolboxXML () {
-        // Use try/catch because this requires digging pretty deep into the VM
-        // Code inside intentionally ignores several error situations (no stage, etc.)
-        // Because they would get caught by this try/catch
-        try {
-            let {editingTarget: target, runtime} = this.props.vm;
-            const stage = runtime.getTargetForStage();
-            if (!target) target = stage; // If no editingTarget, use the stage
-            if (!target) return makeToolboxXML(true); // No targets at all yet. Return initial-setup toolbox.
-
-            const stageCostumes = stage.getCostumes();
-            const targetCostumes = target.getCostumes();
-            const targetSounds = target.getSounds();
-            const dynamicBlocksXML = injectExtensionCategoryTheme(
-                this.props.vm.runtime.getBlocksXML(target),
-                this.props.theme
-            );
-            return makeToolboxXML(false, target.isStage, target.id, dynamicBlocksXML,
-                targetCostumes[targetCostumes.length - 1].name,
-                stageCostumes[stageCostumes.length - 1].name,
-                targetSounds.length > 0 ? targetSounds[targetSounds.length - 1].name : '',
-                getColorsForTheme(this.props.theme)
-            );
-        } catch (err) {
-            log.error(err);
-            return null;
-        }
-    }
     handleBlocksNeedUpdate () {
         if (this.props.isVisible) {
             this.updateWorkspace();
         }
     }
     updateWorkspace () {
-        this.props.vm.updateWorkspace(this.getToolboxXML());
+        this.props.vm.updateWorkspace();
 
         // Handle workspace metrics updating.
         if (this.props.vm.editingTarget && !this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
@@ -268,17 +230,6 @@ class Blocks extends React.Component {
             this.workspace.scale = scale;
             this.workspace.resize();
         }
-    }
-    handleExtensionAdded (categoryInfo) {
-        this.ScratchBlocks.defineBlocksWithJsonArray(categoryInfo.blockDefs);
-
-        // Update the toolbox with new blocks if possible
-        this.updateToolbox();
-        this.workspace.toolbox_.setSelectedCategoryById(categoryInfo.id);
-    }
-    handleBlocksInfoUpdate (blockDefs) {
-        // @todo Later we should replace this to avoid all the warnings from redefining blocks.
-        this.ScratchBlocks.defineBlocksWithJsonArray(blockDefs);
     }
     handleCategorySelected (categoryId) {
         const extension = extensionData.find(ext => ext.extensionId === categoryId);
@@ -337,7 +288,6 @@ class Blocks extends React.Component {
             .then(blocks => this.props.vm.shareBlocksToTarget(blocks, this.props.vm.editingTarget.id))
             .then(() => {
                 this.props.vm.refreshWorkspace();
-                this.updateToolbox(); // To show new variables/custom blocks
             });
     }
     render () {
