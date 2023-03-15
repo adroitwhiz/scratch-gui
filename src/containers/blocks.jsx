@@ -308,6 +308,7 @@ class Blocks extends React.Component {
             let {editingTarget: target, runtime} = this.props.vm;
             const stage = runtime.getTargetForStage();
             if (!target) target = stage; // If no editingTarget, use the stage
+            if (!target) return makeToolboxXML(true); // No targets at all yet. Return initial-setup toolbox.
 
             const stageCostumes = stage.getCostumes();
             const targetCostumes = target.getCostumes();
@@ -328,12 +329,6 @@ class Blocks extends React.Component {
         }
     }
     onWorkspaceUpdate (data) {
-        // When we change sprites, update the toolbox to have the new sprite's blocks
-        const toolboxXML = this.getToolboxXML();
-        if (toolboxXML) {
-            this.updateToolbox();
-        }
-
         if (this.props.vm.editingTarget && !this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             this.onWorkspaceMetricsChange();
         }
@@ -343,6 +338,14 @@ class Blocks extends React.Component {
         const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
         try {
             this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
+
+            // When we change sprites, update the toolbox to have the new sprite's blocks.
+            // This must be done after loading the workspace, because the "Variables" category is populated based on
+            // the variables which are defined in the workspace.
+            const toolboxXML = this.getToolboxXML();
+            if (toolboxXML) {
+                this.updateToolbox();
+            }
         } catch (error) {
             // The workspace is likely incomplete. What did update should be
             // functional.
@@ -358,6 +361,7 @@ class Blocks extends React.Component {
             }
             log.error(error);
         }
+
         this.workspace.addChangeListener(this.props.vm.blockListener);
 
         if (this.props.vm.editingTarget && this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
