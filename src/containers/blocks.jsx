@@ -1,5 +1,4 @@
 import bindAll from 'lodash.bindall';
-import debounce from 'lodash.debounce';
 import defaultsDeep from 'lodash.defaultsdeep';
 import makeToolboxXML from '../lib/make-toolbox-xml';
 import PropTypes from 'prop-types';
@@ -65,7 +64,6 @@ class Blocks extends React.Component {
             'handleCustomProceduresClose',
             'handleExtensionAdded',
             'handleBlocksInfoUpdate',
-            'onTargetsUpdate',
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
@@ -78,7 +76,6 @@ class Blocks extends React.Component {
         this.state = {
             prompt: null
         };
-        this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
     }
     componentDidMount () {
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
@@ -213,36 +210,16 @@ class Blocks extends React.Component {
         this.props.vm.attachBlocks(this.ScratchBlocks);
         this.props.vm.setWorkspace(this.workspace);
         this.props.vm.addListener('workspaceUpdate', this.onWorkspaceUpdate);
-        this.props.vm.addListener('targetsUpdate', this.onTargetsUpdate);
         this.props.vm.addListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.addListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
     }
     detachVM () {
         this.props.vm.setWorkspace(null);
         this.props.vm.removeListener('workspaceUpdate', this.onWorkspaceUpdate);
-        this.props.vm.removeListener('targetsUpdate', this.onTargetsUpdate);
         this.props.vm.removeListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.removeListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
     }
 
-    updateToolboxBlockValue (id, value) {
-        const block = this.workspace
-            .getFlyout()
-            .getWorkspace()
-            .getBlockById(id);
-        if (block) {
-            block.inputList[0].fieldRow[0].setValue(value);
-        }
-    }
-
-    onTargetsUpdate () {
-        if (this.props.vm.editingTarget && this.workspace.getFlyout()) {
-            ['glide', 'move', 'set'].forEach(prefix => {
-                this.updateToolboxBlockValue(`${prefix}x`, Math.round(this.props.vm.editingTarget.x).toString());
-                this.updateToolboxBlockValue(`${prefix}y`, Math.round(this.props.vm.editingTarget.y).toString());
-            });
-        }
-    }
     onWorkspaceMetricsChange () {
         const target = this.props.vm.editingTarget;
         if (target && target.id) {
