@@ -64,7 +64,7 @@ class Blocks extends React.Component {
             'handleCustomProceduresClose',
             'handleExtensionAdded',
             'handleBlocksInfoUpdate',
-            'onWorkspaceUpdate',
+            'handleBlocksNeedUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
             'setLocale'
@@ -109,14 +109,6 @@ class Blocks extends React.Component {
         toolboxWorkspace.registerButtonCallback('MAKE_A_LIST', varListButtonCallback('list'));
         toolboxWorkspace.registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
 
-        // we actually never want the workspace to enable "refresh toolbox" - this basically re-renders the
-        // entire toolbox every time we reset the workspace.  We call updateToolbox as a part of
-        // componentDidUpdate so the toolbox will still correctly be updated
-        this.setToolboxRefreshEnabled = this.workspace.setToolboxRefreshEnabled.bind(this.workspace);
-        this.workspace.setToolboxRefreshEnabled = () => {
-            this.setToolboxRefreshEnabled(false);
-        };
-
         // @todo change this when blockly supports UI events
         addFunctionListener(this.workspace, 'translate', this.onWorkspaceMetricsChange);
         addFunctionListener(this.workspace, 'zoom', this.onWorkspaceMetricsChange);
@@ -155,10 +147,13 @@ class Blocks extends React.Component {
 
         if (this.props.isVisible) { // Scripts tab
             this.workspace.setVisible(true);
-            if (prevProps.locale !== this.props.locale || this.props.locale !== this.props.vm.getLocale()) {
+            if (this.props.locale !== this.props.vm.getLocale()) {
                 // call setLocale if the locale has changed, or changed while the blocks were hidden.
                 // vm.getLocale() will be out of sync if locale was changed while not visible
                 this.setLocale();
+            }
+            if (!prevProps.isVisible) {
+                this.updateWorkspace(this.getToolboxXML());
             }
             // resize blockly manually in case resize happened while hidden
             this.ScratchBlocks.svgResize(this.workspace);
@@ -175,24 +170,13 @@ class Blocks extends React.Component {
     }
     setLocale () {
         this.ScratchBlocks.ScratchMsgs.setLocale(this.props.locale);
-        this.props.vm.setLocale(this.props.locale, this.props.messages)
-            .then(() => {
-                this.workspace.getFlyout().setRecyclingEnabled(false);
-                this.props.vm.refreshWorkspace();
-                this.updateToolbox();
-                this.workspace.getFlyout().setRecyclingEnabled(true);
-            });
+        this.props.vm.setLocale(this.props.locale, this.props.messages);
     }
 
     updateToolbox () {
         const categoryId = this.workspace.toolbox_.getSelectedCategoryId();
         const offset = this.workspace.toolbox_.getCategoryScrollOffset();
         this.workspace.updateToolbox(this.getToolboxXML());
-
-        // In order to catch any changes that mutate the toolbox during "normal runtime"
-        // (variable changes/etc), re-enable toolbox refresh.
-        // Using the setter function will rerender the entire toolbox which we just rendered.
-        this.workspace.toolboxRefreshEnabled_ = true;
 
         const currentCategoryPos = this.workspace.toolbox_.getCategoryPositionById(categoryId);
         const currentCategoryLen = this.workspace.toolbox_.getCategoryLengthById(categoryId);
@@ -209,13 +193,13 @@ class Blocks extends React.Component {
             .getWorkspace();
         this.props.vm.attachBlocks(this.ScratchBlocks);
         this.props.vm.setWorkspace(this.workspace);
-        this.props.vm.addListener('workspaceUpdate', this.onWorkspaceUpdate);
+        this.props.vm.addListener('BLOCKS_NEED_UPDATE', this.handleBlocksNeedUpdate);
         this.props.vm.addListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.addListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
     }
     detachVM () {
         this.props.vm.setWorkspace(null);
-        this.props.vm.removeListener('workspaceUpdate', this.onWorkspaceUpdate);
+        this.props.vm.removeListener('BLOCKS_NEED_UPDATE', this.handleBlocksNeedUpdate);
         this.props.vm.removeListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.removeListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
     }
@@ -264,39 +248,18 @@ class Blocks extends React.Component {
             return null;
         }
     }
-    onWorkspaceUpdate (data) {
+    handleBlocksNeedUpdate () {
+        if (this.props.isVisible) {
+            this.updateWorkspace();
+        }
+    }
+    updateWorkspace () {
+        this.props.vm.updateWorkspace(this.getToolboxXML());
+
+        // Handle workspace metrics updating.
         if (this.props.vm.editingTarget && !this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             this.onWorkspaceMetricsChange();
         }
-
-        const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
-
-        // Tell the VM that the workspace is updating so that it doesn't listen to e.g. "delete" events
-        // TODO: get rid of this flag ASAP once the VM is in charge of updating the workspace.
-        this.props.vm.runtime.blocksManager.workspaceUpdating = true;
-        try {
-            this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
-
-            // When we change sprites, update the toolbox to have the new sprite's blocks.
-            // This must be done after loading the workspace, because the "Variables" category is populated based on
-            // the variables which are defined in the workspace.
-            this.updateToolbox();
-        } catch (error) {
-            // The workspace is likely incomplete. What did update should be
-            // functional.
-            //
-            // Instead of throwing the error, by logging it and continuing as
-            // normal lets the other workspace update processes complete in the
-            // gui and vm, which lets the vm run even if the workspace is
-            // incomplete. Throwing the error would keep things like setting the
-            // correct editing target from happening which can interfere with
-            // some blocks and processes in the vm.
-            if (error.message) {
-                error.message = `Workspace Update Error: ${error.message}`;
-            }
-            log.error(error);
-        }
-        this.props.vm.runtime.blocksManager.workspaceUpdating = false;
 
         if (this.props.vm.editingTarget && this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             const {scrollX, scrollY, scale} = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
@@ -305,11 +268,6 @@ class Blocks extends React.Component {
             this.workspace.scale = scale;
             this.workspace.resize();
         }
-
-        // Clear the undo state of the workspace since this is a
-        // fresh workspace and we don't want any changes made to another sprites
-        // workspace to be 'undone' here.
-        this.workspace.clearUndo();
     }
     handleExtensionAdded (categoryInfo) {
         this.ScratchBlocks.defineBlocksWithJsonArray(categoryInfo.blockDefs);
