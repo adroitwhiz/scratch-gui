@@ -64,10 +64,6 @@ class Blocks extends React.Component {
             'handlePromptCallback',
             'handlePromptClose',
             'handleCustomProceduresClose',
-            'onScriptGlowOn',
-            'onScriptGlowOff',
-            'onBlockGlowOn',
-            'onBlockGlowOff',
             'handleMonitorsUpdate',
             'handleExtensionAdded',
             'handleBlocksInfoUpdate',
@@ -219,10 +215,6 @@ class Blocks extends React.Component {
             .getWorkspace();
         this.props.vm.attachBlocks(this.ScratchBlocks);
         this.props.vm.setWorkspace(this.workspace);
-        this.props.vm.addListener('SCRIPT_GLOW_ON', this.onScriptGlowOn);
-        this.props.vm.addListener('SCRIPT_GLOW_OFF', this.onScriptGlowOff);
-        this.props.vm.addListener('BLOCK_GLOW_ON', this.onBlockGlowOn);
-        this.props.vm.addListener('BLOCK_GLOW_OFF', this.onBlockGlowOff);
         this.props.vm.addListener('VISUAL_REPORT', this.onVisualReport);
         this.props.vm.addListener('workspaceUpdate', this.onWorkspaceUpdate);
         this.props.vm.addListener('targetsUpdate', this.onTargetsUpdate);
@@ -234,10 +226,6 @@ class Blocks extends React.Component {
     }
     detachVM () {
         this.props.vm.setWorkspace(null);
-        this.props.vm.removeListener('SCRIPT_GLOW_ON', this.onScriptGlowOn);
-        this.props.vm.removeListener('SCRIPT_GLOW_OFF', this.onScriptGlowOff);
-        this.props.vm.removeListener('BLOCK_GLOW_ON', this.onBlockGlowOn);
-        this.props.vm.removeListener('BLOCK_GLOW_OFF', this.onBlockGlowOff);
         this.props.vm.removeListener('VISUAL_REPORT', this.onVisualReport);
         this.props.vm.removeListener('workspaceUpdate', this.onWorkspaceUpdate);
         this.props.vm.removeListener('targetsUpdate', this.onTargetsUpdate);
@@ -281,18 +269,6 @@ class Blocks extends React.Component {
                 });
             }, 0);
         }
-    }
-    onScriptGlowOn (data) {
-        this.workspace.glowStack(data.id, true);
-    }
-    onScriptGlowOff (data) {
-        this.workspace.glowStack(data.id, false);
-    }
-    onBlockGlowOn (data) {
-        this.workspace.glowBlock(data.id, true);
-    }
-    onBlockGlowOff (data) {
-        this.workspace.glowBlock(data.id, false);
     }
     onVisualReport (data) {
         this.workspace.reportValue(data.id, data.value);
