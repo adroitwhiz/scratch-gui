@@ -98,8 +98,9 @@ export default function (vm, useCatBlocks) {
         const next = ScratchBlocks.ScratchMsgs.translate('LOOKS_NEXTBACKDROP', 'next backdrop');
         const previous = ScratchBlocks.ScratchMsgs.translate('LOOKS_PREVIOUSBACKDROP', 'previous backdrop');
         const random = ScratchBlocks.ScratchMsgs.translate('LOOKS_RANDOMBACKDROP', 'random backdrop');
-        if (vm.runtime.targets[0] && vm.runtime.targets[0].getCostumes().length > 0) {
-            return vm.runtime.targets[0].getCostumes().map(costume => [costume.name, costume.name])
+        const stage = vm.runtime.getTargetForStage();
+        if (stage && stage.getCostumes().length > 0) {
+            return stage.getCostumes().map(costume => [costume.name, costume.name])
                 .concat([[next, 'next backdrop'],
                     [previous, 'previous backdrop'],
                     [random, 'random backdrop']]);
@@ -117,15 +118,16 @@ export default function (vm, useCatBlocks) {
 
     const spriteMenu = function () {
         const sprites = [];
-        for (const targetId in vm.runtime.targets) {
-            if (!Object.prototype.hasOwnProperty.call(vm.runtime.targets, targetId)) continue;
-            if (vm.runtime.targets[targetId].isOriginal) {
-                if (!vm.runtime.targets[targetId].isStage) {
-                    if (vm.runtime.targets[targetId] === vm.editingTarget) {
-                        continue;
-                    }
-                    sprites.push([vm.runtime.targets[targetId].sprite.name, vm.runtime.targets[targetId].sprite.name]);
+        for (const targetId in vm.runtime.originalTargets) {
+            if (!Object.prototype.hasOwnProperty.call(vm.runtime.originalTargets, targetId)) continue;
+            if (!vm.runtime.originalTargets[targetId].isStage) {
+                if (vm.runtime.originalTargets[targetId] === vm.editingTarget) {
+                    continue;
                 }
+                sprites.push([
+                    vm.runtime.originalTargets[targetId].sprite.name,
+                    vm.runtime.originalTargets[targetId].sprite.name
+                ]);
             }
         }
         return sprites;

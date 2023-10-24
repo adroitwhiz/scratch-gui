@@ -17,7 +17,7 @@ const collectMetadata = function (vm, projectName = '', locale = '') {
         variablesCount: 0
     };
 
-    for (const target of vm.runtime.targets) {
+    for (const target of vm.runtime.originalTargets) {
         ++metadata.spriteCount;
         metadata.blocksCount += Object.keys(target.sprite.blocks._blocks).length;
         metadata.costumesCount += target.sprite.costumes_.length;
